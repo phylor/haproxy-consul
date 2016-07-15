@@ -25,6 +25,10 @@ frontend www
 {{ if env "HAPROXY_USESSL" }}    bind *:443 ssl crt /certs/{{ end }}
 # Generated automatically by consul-template
 
+{{ if eq (env "HAPROXY_USESSL") "force" }}
+    # Redirect all non-secure connections to HTTPS
+    redirect scheme https if !{ ssl_fc }{{ end }}
+    
 #tagged services, tag is use for domain information
 {{ range $tag, $services := services | byTag }}
 # www default redirect for domain {{ $tag |replaceAll "_" "." }}:
