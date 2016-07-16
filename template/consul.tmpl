@@ -25,10 +25,16 @@ frontend www
 {{ if env "HAPROXY_USESSL" }}    bind *:443 ssl crt /certs/{{ end }}
 # Generated automatically by consul-template
 
+{{ if env "LETSENCRYPT" }}
+    acl letsencrypt-acl path_beg /.well-known/acme-challenge/
+    use_backend letsencrypt if letsencrypt-acl
+{{ end }}
+
 {{ if eq (env "HAPROXY_USESSL") "force" }}
     # Redirect all non-secure connections to HTTPS
-    redirect scheme https if !{ ssl_fc }{{ end }}
-    
+    redirect scheme https if !{ ssl_fc {{ if env "LETSENCRYPT" }}letsencrypt-acl{{ end }}}
+{{ end }}
+
 #tagged services, tag is use for domain information
 {{ range $tag, $services := services | byTag }}
 # www default redirect for domain {{ $tag |replaceAll "_" "." }}:
@@ -73,6 +79,11 @@ backend {{ .Name }}_backend
    http-request add-header X-Forwarded-Proto https if { ssl_fc }{{ end }}{{ range service .Name }}
    server {{ .Node }} {{ .Address }}:{{ .Port }} check{{ end }}
 {{ end }}{{ end }}
+
+{{ if env "LETSENCRYPT" }}
+    backend letsencrypt
+        server letsencrypt01 127.0.0.1:{{ env "LETSENCRYPT_PORT" }}
+{{ end }}
 
 {{ if env "HAPROXY_STATS" }}
 backend stats
