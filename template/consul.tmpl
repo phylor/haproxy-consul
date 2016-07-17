@@ -32,7 +32,7 @@ frontend www
 
 {{ if eq (env "HAPROXY_USESSL") "force" }}
     # Redirect all non-secure connections to HTTPS
-    redirect scheme https if !{ ssl_fc {{ if env "LETSENCRYPT" }}letsencrypt-acl{{ end }}}
+    redirect scheme https if !{ ssl_fc } {{ if env "LETSENCRYPT" }}!letsencrypt-acl{{ end }}
 {{ end }}
 
 #tagged services, tag is use for domain information
